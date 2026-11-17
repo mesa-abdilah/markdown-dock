@@ -1,0 +1,10 @@
+[package]
+name = "dmd-vault"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+description = "Offline inspection and decryption CLI for Dynamic Markdown Dock .vault files"
+
+[dependencies]
+dynamic-markdown-dock = { path = "../../src-tauri" }
+hex = "0.4"

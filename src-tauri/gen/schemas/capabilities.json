@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Minimal capabilities for Dynamic Markdown Dock","local":true,"windows":["dock"],"permissions":["core:default","core:event:default","core:window:allow-set-focus","core:window:allow-is-focused","core:window:allow-start-dragging","dialog:allow-open","log:default"]}}

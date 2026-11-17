@@ -1,0 +1,19 @@
+[package]
+name = "dynamic-markdown-dock-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+dynamic-markdown-dock = { path = ".." }
+
+[[bin]]
+name = "parse_vault_header"
+path = "fuzz_targets/parse_vault_header.rs"
+test = false
+doc = false
+bench = false

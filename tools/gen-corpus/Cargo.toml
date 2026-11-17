@@ -1,0 +1,8 @@
+[package]
+name = "gen-corpus"
+version = "0.1.0"
+edition = "2024"
+description = "Deterministic 5,000+ Markdown corpus generator for Dynamic Markdown Dock benchmarks"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
