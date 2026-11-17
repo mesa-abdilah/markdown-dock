@@ -1,9 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="oled-dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic Markdown Dock</title>
+    <script>
+      (function () {
+        try {
+          var valid = [
+            "minimalism",
+            "glassmorphism",
+            "brutalism",
+            "neumorphism",
+            "oled-dark",
+            "skeuomorphism",
+            "dark-aurora",
+            "dark-blur",
+          ];
+          var saved = localStorage.getItem("app-theme");
+          var theme = valid.indexOf(saved) !== -1 ? saved : "oled-dark";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (_e) {
+          document.documentElement.setAttribute("data-theme", "oled-dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

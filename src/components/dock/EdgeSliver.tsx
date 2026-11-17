@@ -1,4 +1,5 @@
 import { cn } from "../../lib/cn";
+import { useTheme } from "../../lib/themes";
 import { useDockStore, type SyncIndicatorStatus } from "../../stores/dockStore";
 
 interface EdgeSliverProps {
@@ -30,6 +31,7 @@ const SLIVER_STYLE: Record<SyncIndicatorStatus, { bar: string; label: string }> 
 export function EdgeSliver({ onClickOpen }: EdgeSliverProps) {
   const syncStatus = useDockStore((s) => s.syncStatus);
   const indexedCount = useDockStore((s) => s.indexedCount);
+  const { peekColor } = useTheme();
   const tone = SLIVER_STYLE[syncStatus];
 
   return (
@@ -49,8 +51,21 @@ export function EdgeSliver({ onClickOpen }: EdgeSliverProps) {
       className="group flex h-full w-full cursor-pointer items-center justify-center py-2.5 outline-none"
     >
       <span
+        data-testid="dock-edge-sliver-bar"
         aria-hidden="true"
-        className={cn("h-full w-[3px] rounded-full transition-all duration-300", tone.bar)}
+        style={
+          peekColor
+            ? {
+                backgroundColor: peekColor,
+                boxShadow: `0 0 10px ${peekColor}`,
+              }
+            : undefined
+        }
+        className={cn(
+          "h-full w-[3px] rounded-full transition-all duration-300",
+          !peekColor && tone.bar,
+          peekColor && syncStatus === "syncing" && "animate-pulse",
+        )}
       />
     </div>
   );

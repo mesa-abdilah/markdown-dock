@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { defaultDockIpc } from "../../lib/ipc";
+import { useTheme } from "../../lib/themes";
 import { useDockStore } from "../../stores/dockStore";
 import { CountBadge } from "./CountBadge";
 import { DockFolderIcon } from "./DockFolderIcon";
@@ -12,6 +13,7 @@ interface CapsuleProps {
 export function Capsule({ onClickOpen }: CapsuleProps) {
   const indexedCount = useDockStore((s) => s.indexedCount);
   const syncStatus = useDockStore((s) => s.syncStatus);
+  const { peekColor } = useTheme();
 
   const dragRef = useRef<{
     active: boolean;
@@ -96,18 +98,37 @@ export function Capsule({ onClickOpen }: CapsuleProps) {
         title="Drag to move along right screen edge"
         className="flex h-3 w-8 cursor-ns-resize items-center justify-center"
       >
-        <span className="h-[3px] w-4 rounded-full bg-white/25 transition-all group-hover:w-5 group-hover:bg-white/50" />
+        <span
+          style={{
+            backgroundColor: peekColor ?? "var(--text-muted)",
+            boxShadow: peekColor ? `0 0 8px ${peekColor}` : undefined,
+          }}
+          className="h-[3px] w-4 rounded-full opacity-75 transition-all group-hover:w-5 group-hover:opacity-100"
+        />
       </div>
 
       {/* Protruding Folder-with-Documents Icon */}
       <div className="flex items-center justify-center transition-transform duration-150 group-hover:-translate-x-0.5 group-hover:scale-[1.04]">
-        <DockFolderIcon className="h-10 w-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]" />
+        <DockFolderIcon className="h-10 w-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.28)]" />
       </div>
 
-      {/* Unified glossy lock + count pill */}
-      <div className="inline-flex items-center gap-0.5 rounded-full border border-white/15 bg-black/50 px-1 py-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.45)] transition-colors group-hover:border-white/25 group-hover:bg-black/65">
+      {/* Unified lock + count pill adapted to active theme & custom peek color */}
+      <div
+        style={{
+          backgroundColor: "var(--bg-surface)",
+          borderColor: peekColor ?? "var(--border-color)",
+          borderWidth: "var(--border-width)",
+          borderStyle: "solid",
+          boxShadow: peekColor ? `0 0 10px ${peekColor}40` : "var(--shadow-button)",
+        }}
+        className="inline-flex items-center gap-0.5 rounded-full px-1 py-[3px] transition-all"
+      >
         <StatusIndicator status={syncStatus} variant="badge" />
-        <span className="h-2.5 w-px bg-white/15" aria-hidden="true" />
+        <span
+          style={{ backgroundColor: "var(--border-color)" }}
+          className="h-2.5 w-px"
+          aria-hidden="true"
+        />
         <CountBadge count={indexedCount} variant="embedded" />
       </div>
     </div>

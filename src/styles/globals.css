@@ -1,13 +1,282 @@
 @import "tailwindcss";
 
-:root {
+/* ============================================================================
+   1. DESIGN TOKENS (CSS VARIABLES) — 6-THEME ENGINE
+   Controlled via html[data-theme="<theme-id>"]
+   ============================================================================ */
+
+:root,
+html[data-theme="oled-dark"] {
   color-scheme: dark;
-  --dmd-glass-top: rgba(10, 11, 16, 0.93);
-  --dmd-glass-bottom: rgba(17, 18, 26, 0.89);
-  --dmd-border: rgba(255, 255, 255, 0.12);
-  --dmd-highlight: rgba(255, 255, 255, 0.16);
-  --dmd-accent: #6366f1;
+  --bg-canvas: #000000;
+  --bg-canvas-image: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(0, 0, 0, 0) 32%);
+  --bg-surface: #0a0a0a;
+  --bg-surface-hover: #141414;
+  --text-primary: #ededed;
+  --text-secondary: #b4b4bb;
+  --text-muted: #888888;
+  --accent-primary: #38bdf8;
+  --accent-secondary: #ffffff;
+  --accent-foreground: #000000;
+  --border-width: 1px;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 10px;
+  --shadow-card: 0 0 24px rgba(255, 255, 255, 0.03);
+  --shadow-button: 0 0 12px rgba(255, 255, 255, 0.03);
+  --shadow-button-hover: 0 0 18px rgba(56, 189, 248, 0.14);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.65);
+  --backdrop-blur: none;
+  --font-display: inherit;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bg-pattern: none;
+  --bg-pattern-size: auto;
+  --clip-card: none;
+  --clip-button: none;
+  --bevel-highlight: none;
+  --bg-popover: #0a0a0a;
+  --status-unlocked-bg: rgba(16, 185, 129, 0.14);
+  --status-unlocked-fg: #6ee7b7;
+  --status-unlocked-border: rgba(52, 211, 153, 0.4);
+  --status-locked-bg: rgba(245, 158, 11, 0.15);
+  --status-locked-fg: #fcd34d;
+  --status-locked-border: rgba(251, 191, 36, 0.45);
 }
+
+/* 1. Minimalism */
+html[data-theme="minimalism"] {
+  color-scheme: light;
+  --bg-canvas: #fafafa;
+  --bg-canvas-image: none;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f4f4f5;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --accent-primary: #18181b;
+  --accent-secondary: #52525b;
+  --accent-foreground: #ffffff;
+  --border-width: 1px;
+  --border-color: #e5e7eb;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-inset: none;
+  --backdrop-blur: none;
+  --bg-popover: #ffffff;
+  --status-unlocked-bg: #ecfdf5;
+  --status-unlocked-fg: #065f46;
+  --status-unlocked-border: #a7f3d0;
+  --status-locked-bg: #fffbeb;
+  --status-locked-fg: #92400e;
+  --status-locked-border: #fde68a;
+}
+
+/* 2. Glassmorphism */
+html[data-theme="glassmorphism"] {
+  color-scheme: light;
+  --bg-canvas: rgba(224, 195, 252, 0.78);
+  --bg-canvas-image: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 50%, #e0e7ff 100%);
+  --bg-surface: rgba(255, 255, 255, 0.25);
+  --bg-surface-hover: rgba(255, 255, 255, 0.42);
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  --accent-primary: #4f46e5;
+  --accent-secondary: #0284c7;
+  --accent-foreground: #ffffff;
+  --border-width: 1px;
+  --border-color: rgba(255, 255, 255, 0.45);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --shadow-card: 0 8px 32px rgba(31, 38, 135, 0.12);
+  --shadow-button: 0 4px 16px rgba(31, 38, 135, 0.1);
+  --shadow-button-hover: 0 8px 24px rgba(31, 38, 135, 0.18);
+  --shadow-inset: inset 0 1px 2px rgba(255, 255, 255, 0.45);
+  --backdrop-blur: blur(16px);
+  --bg-popover: rgba(255, 255, 255, 0.82);
+  --status-unlocked-bg: rgba(16, 185, 129, 0.22);
+  --status-unlocked-fg: #064e3b;
+  --status-unlocked-border: rgba(255, 255, 255, 0.6);
+  --status-locked-bg: rgba(245, 158, 11, 0.24);
+  --status-locked-fg: #78350f;
+  --status-locked-border: rgba(255, 255, 255, 0.6);
+}
+
+/* 3. Neo-Brutalism */
+html[data-theme="brutalism"] {
+  color-scheme: light;
+  --bg-canvas: #fffdf5;
+  --bg-canvas-image: none;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #ffde59;
+  --text-primary: #000000;
+  --text-secondary: #18181b;
+  --text-muted: #3f3f46;
+  --accent-primary: #ffde59;
+  --accent-secondary: #a3e635;
+  --accent-foreground: #000000;
+  --border-width: 2.5px;
+  --border-color: #000000;
+  --radius-sm: 4px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --shadow-card: 4px 4px 0px #000000;
+  --shadow-button: 3px 3px 0px #000000;
+  --shadow-button-hover: 4px 4px 0px #000000;
+  --shadow-inset: 2px 2px 0px #000000;
+  --backdrop-blur: none;
+  --bg-popover: #fffdf5;
+  --status-unlocked-bg: #a3e635;
+  --status-unlocked-fg: #000000;
+  --status-unlocked-border: #000000;
+  --status-locked-bg: #ffde59;
+  --status-locked-fg: #000000;
+  --status-locked-border: #000000;
+}
+
+/* 4. Neumorphism / Soft UI */
+html[data-theme="neumorphism"] {
+  color-scheme: light;
+  --bg-canvas: #e0e5ec;
+  --bg-canvas-image: none;
+  --bg-surface: #e0e5ec;
+  --bg-surface-hover: #e0e5ec;
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --accent-primary: #4f46e5;
+  --accent-secondary: #6366f1;
+  --accent-foreground: #ffffff;
+  --border-width: 0px;
+  --border-color: transparent;
+  --radius-sm: 12px;
+  --radius-md: 15px;
+  --radius-lg: 18px;
+  --shadow-card: 8px 8px 16px #b8bec7, -8px -8px 16px #ffffff;
+  --shadow-button: 5px 5px 10px #b8bec7, -5px -5px 10px #ffffff;
+  --shadow-button-hover: 7px 7px 14px #b8bec7, -7px -7px 14px #ffffff;
+  --shadow-inset: inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
+  --backdrop-blur: none;
+  --bg-popover: #e0e5ec;
+  --status-unlocked-bg: #e0e5ec;
+  --status-unlocked-fg: #047857;
+  --status-unlocked-border: transparent;
+  --status-locked-bg: #e0e5ec;
+  --status-locked-fg: #b45309;
+  --status-locked-border: transparent;
+}
+
+/* 7. Skeuomorphism */
+html[data-theme="skeuomorphism"] {
+  color-scheme: light;
+  --bg-canvas: #dcd8d0;
+  --bg-canvas-image: linear-gradient(180deg, #e5e1d8 0%, #dcd8d0 100%);
+  --bg-surface: #ece8e0;
+  --bg-surface-hover: #f5f2ec;
+  --text-primary: #1c1917;
+  --text-secondary: #44403c;
+  --text-muted: #78716c;
+  --accent-primary: #2563eb;
+  --accent-secondary: #1d4ed8;
+  --accent-foreground: #ffffff;
+  --border-width: 1px;
+  --border-color: #b0aba0;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 10px;
+  --shadow-card: 0 4px 10px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --shadow-button: 0 2px 5px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --shadow-button-hover: 0 3px 7px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --backdrop-blur: none;
+  --bevel-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --bg-popover: #f4f1ea;
+  --status-unlocked-bg: #dcfce7;
+  --status-unlocked-fg: #14532d;
+  --status-unlocked-border: #86efac;
+  --status-locked-bg: #fef3c7;
+  --status-locked-fg: #78350f;
+  --status-locked-border: #fcd34d;
+}
+
+/* 11. Dark Aurora */
+html[data-theme="dark-aurora"] {
+  color-scheme: dark;
+  --bg-canvas: #050814;
+  --bg-canvas-image:
+    radial-gradient(circle at 15% 20%, rgba(16, 185, 129, 0.22), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.25), transparent 50%),
+    radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.18), transparent 50%);
+  --bg-surface: rgba(12, 17, 32, 0.68);
+  --bg-surface-hover: rgba(18, 26, 48, 0.8);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-primary: #2dd4bf;
+  --accent-secondary: #a78bfa;
+  --accent-foreground: #042f2e;
+  --border-width: 1px;
+  --border-color: rgba(139, 92, 246, 0.28);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 14px;
+  --shadow-card: 0 10px 30px rgba(6, 182, 212, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --shadow-button: 0 6px 18px rgba(6, 182, 212, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --shadow-button-hover: 0 8px 24px rgba(45, 212, 191, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --backdrop-blur: blur(14px);
+  --bg-popover: rgba(10, 15, 29, 0.86);
+  --status-unlocked-bg: rgba(45, 212, 191, 0.18);
+  --status-unlocked-fg: #5eead4;
+  --status-unlocked-border: rgba(45, 212, 191, 0.42);
+  --status-locked-bg: rgba(167, 139, 250, 0.2);
+  --status-locked-fg: #ddd6fe;
+  --status-locked-border: rgba(167, 139, 250, 0.45);
+}
+
+/* 12. Dark Blur */
+html[data-theme="dark-blur"] {
+  color-scheme: dark;
+  --bg-canvas: rgba(9, 11, 16, 0.78);
+  --bg-canvas-image:
+    radial-gradient(circle at 25% 25%, rgba(148, 163, 184, 0.12), transparent 45%),
+    radial-gradient(circle at 75% 75%, rgba(71, 85, 105, 0.16), transparent 50%);
+  --bg-surface: rgba(24, 27, 36, 0.52);
+  --bg-surface-hover: rgba(34, 38, 50, 0.68);
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --accent-primary: #60a5fa;
+  --accent-secondary: #e5e7eb;
+  --accent-foreground: #090b10;
+  --border-width: 1px;
+  --border-color: rgba(255, 255, 255, 0.14);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --shadow-button: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --shadow-button-hover: 0 10px 26px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --backdrop-blur: blur(24px) saturate(160%);
+  --bg-popover: rgba(15, 17, 23, 0.65);
+  --status-unlocked-bg: rgba(52, 211, 153, 0.16);
+  --status-unlocked-fg: #6ee7b7;
+  --status-unlocked-border: rgba(255, 255, 255, 0.18);
+  --status-locked-bg: rgba(251, 191, 36, 0.18);
+  --status-locked-fg: #fcd34d;
+  --status-locked-border: rgba(255, 255, 255, 0.18);
+}
+
+/* ============================================================================
+   2. BASE & SMOOTH THEME TRANSITIONS
+   ============================================================================ */
 
 html,
 body,
@@ -18,6 +287,7 @@ body,
   padding: 0;
   overflow: hidden;
   background: transparent !important;
+  color: var(--text-primary);
   font-family:
     "Inter",
     "Segoe UI",
@@ -34,7 +304,182 @@ textarea,
   user-select: text;
 }
 
-/* Subtle dark scrollbar for panel lists */
+.dmd-theme-shell,
+.dmd-surface,
+.dmd-card,
+.dmd-input,
+.dmd-btn,
+.dmd-interactive-btn,
+.dmd-theme-shell button,
+.dmd-theme-shell input,
+.dmd-theme-shell header,
+.dmd-theme-shell footer,
+.dmd-theme-shell section,
+.dmd-theme-shell [role="option"] {
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.12s ease;
+}
+
+/* ============================================================================
+   3. SEMANTIC COMPONENT UTILITIES & THEME-AUTHENTIC ADAPTATIONS
+   ============================================================================ */
+
+.dmd-theme-shell {
+  background-color: var(--bg-canvas);
+  background-image: var(--bg-canvas-image);
+  color: var(--text-primary);
+  border: var(--border-width) solid var(--border-color);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+}
+
+/* Adapt typography tokens inside themed shell across all 6 themes */
+.dmd-theme-shell [class*="text-zinc-100"],
+.dmd-theme-shell [class*="text-zinc-200"],
+.dmd-theme-shell [class*="text-white"] {
+  color: var(--text-primary);
+}
+
+.dmd-theme-shell [class*="text-zinc-300"],
+.dmd-theme-shell [class*="text-zinc-400"] {
+  color: var(--text-secondary);
+}
+
+.dmd-theme-shell [class*="text-zinc-500"],
+.dmd-theme-shell [class*="text-zinc-600"] {
+  color: var(--text-muted);
+}
+
+/* Primary accent buttons preserve their accent foreground */
+.dmd-theme-shell button[class*="bg-indigo-500"],
+.dmd-theme-shell button[class*="bg-emerald-500"] {
+  background-color: var(--accent-primary) !important;
+  background-image: none !important;
+  color: var(--accent-foreground) !important;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-button);
+}
+
+/* Secondary / surface buttons */
+.dmd-theme-shell button[class*="bg-white/"],
+.dmd-theme-shell kbd {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-button);
+}
+
+.dmd-theme-shell button[class*="bg-white/"]:hover {
+  background-color: var(--bg-surface-hover) !important;
+  box-shadow: var(--shadow-button-hover);
+}
+
+/* Inputs & search fields */
+.dmd-theme-shell input[type="text"],
+.dmd-theme-shell input[type="password"] {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-inset) !important;
+}
+
+.dmd-theme-shell input::placeholder,
+.dmd-theme-shell textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Result rows, cards, and containers */
+.dmd-theme-shell [role="option"] {
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.dmd-theme-shell [role="option"]:hover,
+.dmd-theme-shell [role="option"][aria-selected="true"] {
+  background-color: var(--bg-surface-hover);
+}
+
+/* Header, Footer & Split pane dividers */
+.dmd-theme-shell header,
+.dmd-theme-shell footer,
+.dmd-theme-shell section[aria-label="Markdown editor & preview"] {
+  border-color: var(--border-color) !important;
+}
+
+.dmd-theme-shell section[aria-label="Markdown editor & preview"] {
+  background-color: var(--bg-surface);
+}
+
+/* Theme-specific Signature Rules */
+
+/* Neo-Brutalism: bold weights, #FFDE59 & #A3E635 accents, tactile press */
+html[data-theme="brutalism"] .dmd-theme-shell header span,
+html[data-theme="brutalism"] .dmd-theme-shell button,
+html[data-theme="brutalism"] .dmd-theme-shell [role="option"] span:first-child {
+  font-weight: 700 !important;
+}
+
+html[data-theme="brutalism"] .dmd-theme-shell [role="option"][aria-selected="true"] {
+  background-color: #a3e635 !important;
+}
+
+html[data-theme="brutalism"] .dmd-theme-shell button:active:not(:disabled),
+html[data-theme="brutalism"] .dmd-interactive-btn:active:not(:disabled) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+/* Neumorphism: extruded cards/buttons & inset active states */
+html[data-theme="neumorphism"] .dmd-theme-shell button:active:not(:disabled),
+html[data-theme="neumorphism"] .dmd-theme-shell button[aria-pressed="true"],
+html[data-theme="neumorphism"] .dmd-theme-shell [role="option"][aria-selected="true"] {
+  box-shadow: var(--shadow-inset) !important;
+}
+
+/* 7. Skeuomorphism: tactile surface gradients, glossy primary buttons, recessed active state */
+html[data-theme="skeuomorphism"] .dmd-theme-shell [role="option"],
+html[data-theme="skeuomorphism"] .dmd-theme-shell button[class*="bg-white/"],
+html[data-theme="skeuomorphism"] .dmd-interactive-btn {
+  background-image: linear-gradient(180deg, #ffffff 0%, #ece8e0 100%) !important;
+  box-shadow: var(--shadow-button) !important;
+}
+
+html[data-theme="skeuomorphism"] .dmd-theme-shell button[class*="bg-indigo-500"],
+html[data-theme="skeuomorphism"] .dmd-theme-shell button[class*="bg-emerald-500"] {
+  background-image: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  border-color: #1e40af !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+html[data-theme="skeuomorphism"] .dmd-theme-shell button:active:not(:disabled),
+html[data-theme="skeuomorphism"] .dmd-interactive-btn:active:not(:disabled) {
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 11. Dark Aurora & 12. Dark Blur: translucent frosted cards & sidebars */
+html[data-theme="dark-aurora"] .dmd-theme-shell [role="option"],
+html[data-theme="dark-blur"] .dmd-theme-shell [role="option"] {
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+}
+
+html[data-theme="dark-blur"] .dmd-theme-shell section[aria-label="Markdown editor & preview"] {
+  background-color: rgba(15, 17, 23, 0.65) !important;
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+}
+
+/* Scrollbar styling adapted to theme border/muted token */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -45,39 +490,37 @@ textarea,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--text-muted);
+  opacity: 0.35;
   border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
 }
 
 /* Search snippet highlights */
 .dmd-snippet mark {
-  background: rgba(99, 102, 241, 0.34);
-  color: #e0e7ff;
+  background: var(--accent-primary);
+  color: var(--accent-foreground);
   border-radius: 3px;
-  padding: 0 2px;
+  padding: 0 3px;
+  font-weight: 600;
 }
 
 /* In-document Ctrl+F highlights inside PreviewPane */
 .dmd-find-match {
-  background: rgba(250, 204, 21, 0.28);
-  color: #fef08a;
+  background: rgba(250, 204, 21, 0.35);
+  color: var(--text-primary);
   border-radius: 3px;
   padding: 0 1px;
 }
 
 .dmd-find-match.dmd-find-active {
-  background: rgba(245, 158, 11, 0.85);
-  color: #18181b;
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.9);
+  background: #f59e0b;
+  color: #000000;
+  box-shadow: 0 0 0 1px #d97706;
 }
 
-/* Rendered Markdown prose inside PreviewPane */
+/* Rendered Markdown prose inside PreviewPane adapted to theme tokens */
 .dmd-prose {
-  color: #e4e4e7;
+  color: var(--text-primary);
   font-size: 13px;
   line-height: 1.6;
   word-wrap: break-word;
@@ -86,15 +529,15 @@ textarea,
 .dmd-prose h2,
 .dmd-prose h3,
 .dmd-prose h4 {
-  color: #fafafa;
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: 700;
   letter-spacing: -0.01em;
   margin-top: 1.1em;
   margin-bottom: 0.45em;
 }
 .dmd-prose h1 {
   font-size: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: var(--border-width) solid var(--border-color);
   padding-bottom: 0.3em;
   margin-top: 0;
 }
@@ -108,12 +551,9 @@ textarea,
   margin: 0.55em 0;
 }
 .dmd-prose a {
-  color: #818cf8;
+  color: var(--accent-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-.dmd-prose a:hover {
-  color: #a5b4fc;
 }
 .dmd-prose ul,
 .dmd-prose ol {
@@ -132,29 +572,32 @@ textarea,
 .dmd-prose code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85em;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  background: var(--bg-canvas);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sm);
   padding: 0.1em 0.35em;
-  color: #c7d2fe;
+  color: var(--text-primary);
 }
 .dmd-prose pre {
-  background: rgba(0, 0, 0, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--bg-canvas);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset);
   padding: 0.75em 0.9em;
   overflow-x: auto;
   margin: 0.7em 0;
 }
 .dmd-prose pre code {
   background: transparent;
+  border: 0;
   padding: 0;
-  color: #e4e4e7;
+  color: var(--text-primary);
 }
 .dmd-prose blockquote {
-  border-left: 3px solid rgba(99, 102, 241, 0.6);
+  border-left: 3px solid var(--accent-primary);
   padding-left: 0.8em;
   margin: 0.65em 0;
-  color: #a1a1aa;
+  color: var(--text-secondary);
 }
 .dmd-prose table {
   width: 100%;
@@ -164,20 +607,20 @@ textarea,
 }
 .dmd-prose th,
 .dmd-prose td {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: var(--border-width) solid var(--border-color);
   padding: 0.35em 0.6em;
   text-align: left;
 }
 .dmd-prose th {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-canvas);
   font-weight: 600;
 }
 .dmd-prose hr {
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: var(--border-width) solid var(--border-color);
   margin: 1em 0;
 }
 .dmd-prose input[type="checkbox"] {
-  accent-color: #6366f1;
+  accent-color: var(--accent-primary);
   margin-right: 0.45em;
 }

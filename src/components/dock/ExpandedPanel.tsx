@@ -22,6 +22,7 @@ import { ResultList } from "../search/ResultList";
 import { CustomCheckbox } from "../ui/CustomCheckbox";
 import { CustomSelect } from "../ui/CustomSelect";
 import { Kbd } from "../ui/Kbd";
+import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 import { PinButton } from "./PinButton";
 
 const PreviewPane = lazy(() =>
@@ -202,7 +203,17 @@ export function ExpandedPanel() {
       <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-3.5 py-2.5">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold tracking-tight text-zinc-100">Markdown Dock</span>
-          <span className="rounded-full bg-gradient-to-b from-sky-400/20 to-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-100 tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] ring-1 ring-sky-300/30">
+          <span
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              borderWidth: "var(--border-width)",
+              borderStyle: "solid",
+              boxShadow: "var(--shadow-button)",
+            }}
+            className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
+          >
             {indexedCount} files
           </span>
           {indexingProgress && (
@@ -213,6 +224,7 @@ export function ExpandedPanel() {
         </div>
 
         <div className="flex items-center gap-1">
+          <ThemeSwitcher mode="popover" />
           <div className="group/vault relative">
             <button
               type="button"
@@ -233,20 +245,38 @@ export function ExpandedPanel() {
                     ? "Unlock Vault"
                     : "Lock Vault"
               }
-              className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10.5px] font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
-                vaultStatus.state === "Unlocked"
-                  ? "bg-gradient-to-b from-emerald-400/20 to-emerald-500/15 text-emerald-200 shadow-[0_0_10px_rgba(52,211,153,0.18)] ring-1 ring-emerald-400/40 hover:from-emerald-400/30 hover:to-emerald-500/25"
-                  : vaultStatus.state === "Locked"
-                    ? "bg-gradient-to-b from-amber-400/25 to-amber-500/15 text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.2)] ring-1 ring-amber-400/45 hover:from-amber-400/35 hover:to-amber-500/25"
-                    : "bg-white/[0.06] text-zinc-300 ring-1 ring-white/15 hover:bg-white/12 hover:text-zinc-100"
-              }`}
+              style={{
+                backgroundColor:
+                  vaultStatus.state === "Unlocked"
+                    ? "var(--status-unlocked-bg)"
+                    : vaultStatus.state === "Locked"
+                      ? "var(--status-locked-bg)"
+                      : "var(--bg-surface)",
+                color:
+                  vaultStatus.state === "Unlocked"
+                    ? "var(--status-unlocked-fg)"
+                    : vaultStatus.state === "Locked"
+                      ? "var(--status-locked-fg)"
+                      : "var(--text-primary)",
+                borderColor:
+                  vaultStatus.state === "Unlocked"
+                    ? "var(--status-unlocked-border)"
+                    : vaultStatus.state === "Locked"
+                      ? "var(--status-locked-border)"
+                      : "var(--border-color)",
+                borderWidth: "var(--border-width)",
+                borderStyle: "solid",
+                borderRadius: "var(--radius-md)",
+                boxShadow: "var(--shadow-button)",
+              }}
+              className="dmd-interactive-btn inline-flex h-7 items-center gap-1.5 px-2.5 text-[10.5px] font-semibold transition-all focus:outline-none"
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
                   vaultStatus.state === "Unlocked"
-                    ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]"
+                    ? "bg-emerald-500"
                     : vaultStatus.state === "Locked"
-                      ? "animate-pulse bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+                      ? "animate-pulse bg-amber-500"
                       : "bg-zinc-400"
                 }`}
                 aria-hidden="true"
@@ -270,16 +300,33 @@ export function ExpandedPanel() {
             <div
               id="vault-hover-help"
               role="tooltip"
-              className="pointer-events-none absolute top-full right-0 z-50 mt-1.5 w-64 rounded-xl border border-white/15 bg-zinc-950/95 p-2.5 text-left opacity-0 shadow-xl backdrop-blur-md transition-opacity duration-150 group-focus-within/vault:opacity-100 group-hover/vault:opacity-100"
+              style={{
+                backgroundColor: "var(--bg-popover)",
+                borderColor: "var(--border-color)",
+                borderWidth: "var(--border-width)",
+                borderStyle: "solid",
+                borderRadius: "var(--radius-md)",
+                boxShadow: "var(--shadow-card)",
+                backdropFilter: "var(--backdrop-blur)",
+                WebkitBackdropFilter: "var(--backdrop-blur)",
+                color: "var(--text-primary)",
+              }}
+              className="pointer-events-none absolute top-full right-0 z-50 mt-1.5 w-64 p-2.5 text-left opacity-0 transition-opacity duration-150 group-focus-within/vault:opacity-100 group-hover/vault:opacity-100"
             >
-              <p className="text-[11px] font-semibold text-zinc-100">
+              <p
+                style={{ color: "var(--text-primary)" }}
+                className="text-[11px] font-semibold"
+              >
                 {vaultStatus.state === "Uninitialized"
                   ? "Vault Not Set Up — Click to Setup"
                   : vaultStatus.state === "Locked"
                     ? "Vault Locked — Click to Unlock"
                     : "Vault Unlocked — Click to Lock"}
               </p>
-              <p className="mt-1 text-[10.5px] leading-relaxed text-zinc-400">
+              <p
+                style={{ color: "var(--text-secondary)" }}
+                className="mt-1 text-[10.5px] leading-relaxed"
+              >
                 {vaultStatus.state === "Uninitialized"
                   ? "Create a Master Password & Recovery Key to encrypt backups before uploading to Google Drive."
                   : vaultStatus.state === "Locked"
@@ -300,11 +347,16 @@ export function ExpandedPanel() {
             aria-pressed={settingsOpen}
             aria-label="Dock settings"
             title="Dock settings & folders"
-            className={`mr-1 inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
-              settingsOpen
-                ? "bg-white/15 text-zinc-100"
-                : "text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
-            }`}
+            style={{
+              backgroundColor: settingsOpen ? "var(--accent-primary)" : "var(--bg-surface)",
+              color: settingsOpen ? "var(--accent-foreground)" : "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              borderWidth: "var(--border-width)",
+              borderStyle: "solid",
+              borderRadius: "var(--radius-md)",
+              boxShadow: settingsOpen ? "var(--shadow-inset)" : "var(--shadow-button)",
+            }}
+            className="dmd-interactive-btn mr-1 inline-flex h-7 w-7 items-center justify-center transition-all focus:outline-none"
           >
             <Settings2 className="h-3.5 w-3.5" />
           </button>
@@ -313,7 +365,16 @@ export function ExpandedPanel() {
             onClick={() => void collapse({ force: true })}
             aria-label="Collapse dock"
             title="Collapse dock (Esc)"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              borderWidth: "var(--border-width)",
+              borderStyle: "solid",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-button)",
+            }}
+            className="dmd-interactive-btn inline-flex h-7 w-7 items-center justify-center transition-all focus:outline-none"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -441,6 +502,14 @@ export function ExpandedPanel() {
                   </>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2 border-b border-white/[0.07] pb-3">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-zinc-200">Visual Theme Engine</span>
+                <span className="text-[10px] text-zinc-400">8 Real-Time Themes</span>
+              </div>
+              <ThemeSwitcher mode="grid" />
             </div>
 
             <div className="flex items-center justify-between">

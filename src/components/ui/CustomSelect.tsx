@@ -35,7 +35,7 @@ interface MenuCoords {
 }
 
 /**
- * Custom glassmorphic dropdown select rendered via Portal so it is never clipped by overflow containers.
+ * Custom dropdown select rendered via Portal and styled with Multi-Theme CSS Variables.
  */
 export function CustomSelect({
   value,
@@ -69,8 +69,7 @@ export function CustomSelect({
     const estMenuHeight = Math.min(240, options.length * 32 + (menuHeader ? 28 : 12));
     const openUpward = spaceBelow < estMenuHeight && rect.top > spaceBelow;
 
-    const minW =
-      variant === "field" ? Math.max(rect.width, 160) : Math.max(rect.width, 156);
+    const minW = variant === "field" ? Math.max(rect.width, 160) : Math.max(rect.width, 156);
 
     const next: MenuCoords = {
       minWidth: minW,
@@ -172,17 +171,23 @@ export function CustomSelect({
         title={title}
         disabled={disabled}
         onClick={toggleOpen}
+        style={{
+          backgroundColor: "var(--bg-surface)",
+          color: "var(--text-primary)",
+          borderColor: open ? "var(--accent-primary)" : "var(--border-color)",
+          borderWidth: "var(--border-width)",
+          borderStyle: "solid",
+          borderRadius: variant === "field" ? "var(--radius-md)" : "var(--radius-sm)",
+          boxShadow: variant === "field" ? "var(--shadow-inset)" : "var(--shadow-button)",
+        }}
         className={cn(
-          "inline-flex cursor-pointer items-center justify-between gap-1.5 outline-none transition-all focus-visible:ring-2 focus-visible:ring-indigo-400/70 disabled:cursor-not-allowed disabled:opacity-45",
-          variant === "field" &&
-            "h-8 w-full rounded-lg border border-white/12 bg-white/[0.06] px-2.5 text-xs text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20 hover:bg-white/[0.09]",
-          variant === "compact" &&
-            "h-6 rounded-md border border-white/12 bg-white/[0.07] px-2 text-[10px] font-medium text-zinc-200 hover:border-white/20 hover:bg-white/[0.12]",
+          "dmd-interactive-btn inline-flex cursor-pointer items-center justify-between gap-1.5 outline-none transition-all disabled:cursor-not-allowed disabled:opacity-45",
+          variant === "field" && "h-8 w-full px-2.5 text-xs",
+          variant === "compact" && "h-6 px-2 text-[10px] font-medium",
           variant === "action" &&
             (triggerLabel
-              ? "h-7 rounded-lg border border-white/10 bg-white/[0.07] px-2 text-[11px] font-medium text-zinc-200 hover:border-indigo-400/35 hover:bg-indigo-500/20 hover:text-white"
-              : "h-6 w-6 justify-center rounded-md bg-white/[0.07] text-zinc-300 hover:bg-indigo-500/25 hover:text-white"),
-          open && "border-indigo-400/55 ring-2 ring-indigo-400/25",
+              ? "h-7 px-2 text-[11px] font-medium"
+              : "h-6 w-6 justify-center"),
           className,
         )}
       >
@@ -193,9 +198,10 @@ export function CustomSelect({
             {triggerLabel && (
               <ChevronDown
                 className={cn(
-                  "h-3 w-3 text-zinc-400 transition-transform duration-150",
-                  open && "rotate-180 text-indigo-300",
+                  "h-3 w-3 transition-transform duration-150",
+                  open && "rotate-180",
                 )}
+                style={{ color: "var(--text-secondary)" }}
               />
             )}
           </>
@@ -203,15 +209,19 @@ export function CustomSelect({
           <>
             <span className="flex min-w-0 items-center gap-1.5 truncate">
               {triggerIcon}
-              <span className={cn("truncate", !selectedOption && "text-zinc-400")}>
+              <span
+                className="truncate"
+                style={{ color: selectedOption ? "var(--text-primary)" : "var(--text-muted)" }}
+              >
                 {selectedOption?.label ?? placeholder}
               </span>
             </span>
             <ChevronDown
               className={cn(
-                "h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-150",
-                open && "rotate-180 text-indigo-300",
+                "h-3.5 w-3.5 shrink-0 transition-transform duration-150",
+                open && "rotate-180",
               )}
+              style={{ color: "var(--text-secondary)" }}
             />
           </>
         )}
@@ -235,11 +245,24 @@ export function CustomSelect({
               right: coords.right,
               minWidth: coords.minWidth,
               maxWidth: 280,
+              backgroundColor: "var(--bg-canvas)",
+              backgroundImage: "var(--bg-canvas-image)",
+              borderColor: "var(--border-color)",
+              borderWidth: "var(--border-width)",
+              borderStyle: "solid",
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "var(--shadow-card)",
+              backdropFilter: "var(--backdrop-blur)",
+              WebkitBackdropFilter: "var(--backdrop-blur)",
+              color: "var(--text-primary)",
             }}
-            className="z-[9999] max-h-60 overflow-y-auto rounded-xl border border-white/15 bg-zinc-900/95 p-1 shadow-[0_14px_36px_rgba(0,0,0,0.72),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+            className="z-[9999] max-h-60 overflow-y-auto p-1 transition-all duration-200"
           >
             {menuHeader && (
-              <div className="px-2 py-1 text-[10px] font-semibold tracking-wide text-zinc-400 uppercase">
+              <div
+                className="px-2 py-1 text-[10px] font-semibold tracking-wide uppercase"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {menuHeader}
               </div>
             )}
@@ -260,20 +283,22 @@ export function CustomSelect({
                       setOpen(false);
                       triggerRef.current?.focus();
                     }}
-                    className={cn(
-                      "flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors",
-                      isSelected
-                        ? "bg-indigo-500/25 font-medium text-indigo-100"
+                    style={{
+                      backgroundColor: isSelected
+                        ? "var(--accent-primary)"
                         : isHighlighted
-                          ? "bg-white/10 text-white"
-                          : "text-zinc-300 hover:bg-white/[0.08] hover:text-white",
-                    )}
+                          ? "var(--bg-surface-hover)"
+                          : "transparent",
+                      color: isSelected ? "var(--accent-foreground)" : "var(--text-primary)",
+                      borderRadius: "var(--radius-sm)",
+                    }}
+                    className="flex w-full cursor-pointer items-center justify-between gap-2 px-2 py-1.5 text-left text-[11px] font-medium transition-colors"
                   >
                     <span className="flex min-w-0 items-center gap-1.5">
-                      {opt.icon && <span className="shrink-0 text-amber-300">{opt.icon}</span>}
+                      {opt.icon && <span className="shrink-0">{opt.icon}</span>}
                       <span className="truncate">{opt.label}</span>
                     </span>
-                    {isSelected && <Check className="h-3 w-3 shrink-0 text-indigo-300" />}
+                    {isSelected && <Check className="h-3 w-3 shrink-0" />}
                   </button>
                 );
               })}

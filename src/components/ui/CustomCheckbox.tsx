@@ -11,7 +11,7 @@ interface CustomCheckboxProps {
 }
 
 /**
- * Custom styled checkbox / toggle switch backed by an accessible native checkbox input.
+ * Custom styled checkbox / toggle switch backed by an accessible native checkbox input and theme tokens.
  */
 export function CustomCheckbox({
   checked,
@@ -40,29 +40,38 @@ export function CustomCheckbox({
       {variant === "switch" ? (
         <span
           aria-hidden="true"
-          className={cn(
-            "relative inline-flex h-[18px] w-[32px] items-center rounded-full border transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-400/70",
-            checked
-              ? "border-indigo-400/50 bg-gradient-to-r from-indigo-500 to-sky-500 shadow-[0_0_10px_rgba(99,102,241,0.35)]"
-              : "border-white/15 bg-white/[0.08] hover:border-white/25 hover:bg-white/[0.12]",
-          )}
+          style={{
+            backgroundColor: checked ? "var(--accent-primary)" : "var(--bg-surface)",
+            borderColor: "var(--border-color)",
+            borderWidth: "var(--border-width)",
+            borderStyle: "solid",
+            boxShadow: checked ? "var(--shadow-button)" : "var(--shadow-inset)",
+          }}
+          className="relative inline-flex h-[18px] w-[32px] items-center rounded-full transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent-primary)]"
         >
           <span
+            style={{
+              backgroundColor: checked ? "var(--accent-foreground)" : "var(--text-secondary)",
+            }}
             className={cn(
-              "inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-150",
-              checked ? "translate-x-[15px]" : "translate-x-[2px] opacity-80",
+              "inline-block h-3.5 w-3.5 rounded-full shadow-sm transition-transform duration-150",
+              checked ? "translate-x-[14px]" : "translate-x-[2px]",
             )}
           />
         </span>
       ) : (
         <span
           aria-hidden="true"
-          className={cn(
-            "inline-flex h-4 w-4 items-center justify-center rounded-[5px] border transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-400/70",
-            checked
-              ? "border-sky-300/60 bg-gradient-to-b from-indigo-500 to-sky-500 text-white shadow-[0_2px_8px_rgba(56,189,248,0.35)]"
-              : "border-white/20 bg-white/[0.06] text-transparent hover:border-white/35 hover:bg-white/[0.1]",
-          )}
+          style={{
+            backgroundColor: checked ? "var(--accent-primary)" : "var(--bg-surface)",
+            color: checked ? "var(--accent-foreground)" : "transparent",
+            borderColor: "var(--border-color)",
+            borderWidth: "var(--border-width)",
+            borderStyle: "solid",
+            borderRadius: "var(--radius-sm)",
+            boxShadow: checked ? "var(--shadow-button)" : "var(--shadow-inset)",
+          }}
+          className="inline-flex h-4 w-4 items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent-primary)]"
         >
           <Check
             className={cn(

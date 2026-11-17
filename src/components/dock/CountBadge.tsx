@@ -12,10 +12,22 @@ export function CountBadge({
   const formatted = count > 999 ? "999+" : String(count);
   return (
     <span
+      style={
+        variant === "embedded"
+          ? { color: "var(--text-primary)" }
+          : {
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              borderWidth: "var(--border-width)",
+              borderStyle: "solid",
+              boxShadow: "var(--shadow-button)",
+            }
+      }
       className={cn(
         variant === "embedded"
-          ? "inline-flex min-w-[16px] items-center justify-center px-1 text-[10.5px] font-bold tracking-tight text-sky-100 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
-          : "inline-flex min-w-[22px] items-center justify-center rounded-full bg-gradient-to-b from-sky-400/25 to-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold text-sky-100 tabular-nums ring-1 ring-sky-300/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_2px_6px_rgba(14,165,233,0.18)]",
+          ? "inline-flex min-w-[16px] items-center justify-center px-1 text-[10.5px] font-bold tracking-tight tabular-nums"
+          : "inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
         className,
       )}
       aria-label={`${count} indexed markdown files`}
