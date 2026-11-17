@@ -3,10 +3,10 @@ use specta::Type;
 
 pub const EDGE_MARGIN_LOGICAL: f64 = 8.0;
 pub const SHADOW_PAD_LOGICAL: f64 = 8.0;
-pub const CAPSULE_W_LOGICAL: f64 = 58.0;
-pub const CAPSULE_H_LOGICAL: f64 = 98.0;
-pub const PEEK_W_LOGICAL: f64 = 308.0;
-pub const PEEK_H_LOGICAL: f64 = 184.0;
+pub const CAPSULE_W_LOGICAL: f64 = 12.0;
+pub const CAPSULE_H_LOGICAL: f64 = 80.0;
+pub const PEEK_W_LOGICAL: f64 = 58.0;
+pub const PEEK_H_LOGICAL: f64 = 96.0;
 pub const EXPANDED_W_LOGICAL: f64 = 460.0;
 pub const EXPANDED_MAX_H_LOGICAL: f64 = 680.0;
 pub const WIDE_W_LOGICAL: f64 = 1060.0;

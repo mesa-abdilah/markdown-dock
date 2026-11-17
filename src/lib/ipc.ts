@@ -44,8 +44,8 @@ export function isTauriRuntime(): boolean {
 
 const DEFAULT_FALLBACK_PLAN = (target: DockMode, seq: number): DockPlan => {
   const sizes: Record<DockMode, { width: number; height: number }> = {
-    Collapsed: { width: 58, height: 98 },
-    Peek: { width: 308, height: 184 },
+    Collapsed: { width: 12, height: 80 },
+    Peek: { width: 58, height: 96 },
     Expanded: { width: 460, height: 680 },
     Wide: { width: 1060, height: 760 },
     Fullscreen: { width: 1280, height: 800 },

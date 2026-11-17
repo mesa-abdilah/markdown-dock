@@ -15,8 +15,8 @@
       {
         "label": "dock",
         "title": "Dynamic Markdown Dock",
-        "width": 74,
-        "height": 114,
+        "width": 28,
+        "height": 96,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,

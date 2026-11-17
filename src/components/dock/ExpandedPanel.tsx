@@ -594,7 +594,7 @@ export function ExpandedPanel() {
                       <X className="h-3 w-3" />
                     </button>
                   ) : (
-                    <span className="pointer-events-none absolute right-2.5">
+                    <span className="pointer-events-none absolute right-2.5 pb-1.5">
                       <Kbd>{settings.hotkey}</Kbd>
                     </span>
                   )}

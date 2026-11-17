@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { useDockStore } from "../stores/dockStore";
 import { useSearchStore } from "../stores/searchStore";
 
-const PEEK_DWELL_MS = 90;
-const PEEK_LEAVE_GRACE_MS = 320;
+const PEEK_DWELL_MS = 45;
+const PEEK_LEAVE_GRACE_MS = 350;
 const EXPANDED_LEAVE_GRACE_MS = 600;
 const TYPING_GUARD_MS = 2000;
 

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { AnchorEdge, DockMode, LogicalSizeF } from "../bindings/commands";
-import { defaultDockIpc, type DockIpc } from "../lib/ipc";
+import { defaultDockIpc, isTauriRuntime, type DockIpc } from "../lib/ipc";
 
 export type DockMachineState = DockMode | "Collapsing";
 export type SyncIndicatorStatus = "idle" | "syncing" | "locked" | "error";
@@ -54,6 +54,13 @@ export function setDockIpcForTests(ipc: DockIpc) {
 
 let noticeCounter = 0;
 
+async function waitForWebviewSurfaceCommit(): Promise<void> {
+  if (!isTauriRuntime() || typeof window === "undefined") return;
+  await new Promise<void>((resolve) =>
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())),
+  );
+}
+
 export const useDockStore = create<DockStoreState>((set, get) => ({
   state: "Collapsed",
   preCollapseMode: "Peek",
@@ -63,7 +70,7 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
   lastTypingAt: 0,
   focusSearchSeq: 0,
   settingsOpen: false,
-  visualLogical: { width: 58, height: 98 },
+  visualLogical: { width: 12, height: 80 },
   shadowPad: 8,
   verticalRatio: 0.5,
   indexedCount: 0,
@@ -81,8 +88,8 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
         seq: snap.seq,
         verticalRatio: snap.vertical_ratio ?? 0.5,
         visualLogical: {
-          width: snap.plan.visual_logical.width ?? 58,
-          height: snap.plan.visual_logical.height ?? 98,
+          width: snap.plan.visual_logical.width ?? 12,
+          height: snap.plan.visual_logical.height ?? 80,
         },
         shadowPad: snap.plan.shadow_pad ?? 6,
       });
@@ -111,6 +118,8 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
         shadowPad: plan.shadow_pad ?? 6,
       });
       await activeIpc.dockApply(plan.seq, focusWindow);
+      await waitForWebviewSurfaceCommit();
+      if (get().seq !== plan.seq) return;
       set((s) => ({
         state: target,
         focusSearchSeq: focusWindow ? s.focusSearchSeq + 1 : s.focusSearchSeq,
@@ -143,6 +152,7 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
     });
 
     await activeIpc.dockApply(plan.seq, focusWindow);
+    await waitForWebviewSurfaceCommit();
 
     // Guard against newer transition overtaking this async call.
     if (get().seq !== plan.seq) return;
@@ -163,14 +173,13 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
     }
 
     // Collapse protocol:
-    // 1. Remember pre-collapse mode so hover-interruption restores Peek vs Expanded accurately.
-    // 2. Start spring animation back to capsule while window remains large.
-    // 3. Wait for Motion onAnimationComplete -> finalizeCollapse() shrinks OS window.
+    // 1. Remember pre-collapse mode & preserve current visualLogical while gliding out.
+    // 2. Motion slides/fades panel back into the right edge while OS window stays large.
+    // 3. Motion onAnimationComplete -> finalizeCollapse() shrinks OS window to sliver.
     set({
       state: "Collapsing",
       preCollapseMode: state,
       settingsOpen: false,
-      visualLogical: { width: 58, height: 98 },
     });
   },
 
@@ -186,8 +195,8 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
         seq: plan.seq,
         anchor: plan.anchor,
         visualLogical: {
-          width: plan.visual_logical.width ?? 58,
-          height: plan.visual_logical.height ?? 98,
+          width: plan.visual_logical.width ?? 12,
+          height: plan.visual_logical.height ?? 80,
         },
         shadowPad: plan.shadow_pad ?? 6,
       });

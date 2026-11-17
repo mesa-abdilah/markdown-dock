@@ -4,10 +4,10 @@ A lightweight, right-edge Dynamic Island desktop dock for searching, editing, pr
 
 ## Key Features
 
-- **Right-Edge Dock Ergonomics:**
-  - **Collapsed Tab (`58×98`):** Stays flush against the right screen edge with a folder-and-documents icon, live Vault lock status badge, indexed file counter, and a vertical drag grip to reposition along the edge.
-  - **Hover Peek Card (`308×184`):** Expanding hover card showing Vault status (`Unlocked` / `Locked` / `Local`), indexed file & folder counts, sync readiness, and shortcut hint.
-  - **Expanded (`460×680`), Wide Split (`1060×760`), & Fullscreen (`F11`):** Smooth spring-animated transitions across folder list, split Markdown workspace, and full work-area editing/reading modes.
+- **3-Stage Right-Edge Dynamic Island Ergonomics:**
+  - **Stage 1 — Edge Sliver (`Collapsed`, `12×80` hit bounds / `7px` visible sliver):** Sits flush against the right screen edge with a glowing vertical status sliver and `5px` hit-padding so it never obstructs underlying scrollbars or clicks.
+  - **Stage 2 — Hover Capsule (`Peek`, `58×96`):** Emerges on hover (`65ms` dwell, `350ms` anti-flicker grace delay on leave) as a dark glass vertical capsule displaying the folder icon, Vault lock badge, file counter, and vertical drag grip.
+  - **Stage 3 — Expanded (`460×680`), Wide Split (`1060×760`), & Fullscreen (`F11`):** Opens by clicking the Stage 2 capsule, via global hotkey (`Alt + Space` / configurable), or direct `.md` file drag-and-drop bypass (`DropTarget`). Auto-collapses when unfocused unless pinned.
 - **In-App Folder Organization & File-Only `.md` Drag-Drop:**
   - Group and manage notes in collapsible in-app folders (create, rename, delete, move notes between folders, or toggle visibility).
   - Drag and drop `.md` files directly onto the right-edge dock to preview and upload into a target folder.

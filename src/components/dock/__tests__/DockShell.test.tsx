@@ -47,22 +47,22 @@ describe("DockShell", () => {
     });
   });
 
-  it("renders capsule with badge in Collapsed state", () => {
+  it("renders minimalist EdgeSliver in Stage 1 (Collapsed) state", () => {
     render(<DockShell />);
     expect(screen.getByTestId("dock-shell")).toHaveAttribute("data-dock-state", "Collapsed");
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getByTestId("dock-edge-sliver")).toBeInTheDocument();
   });
 
-  it("renders compact PeekCard without search/list when hovered (Peek), and opens full panel on click", async () => {
+  it("renders compact Hover Capsule with icon & count badge when hovered (Peek), and opens Expanded panel on click", async () => {
     const expandSpy = vi.spyOn(useDockStore.getState(), "expandTo");
     useDockStore.setState({
       state: "Peek",
-      visualLogical: { width: 196, height: 148 },
+      visualLogical: { width: 58, height: 96 },
     });
     render(<DockShell />);
     expect(screen.queryByLabelText("Search Markdown files")).not.toBeInTheDocument();
-    expect(screen.getByText("42 files indexed")).toBeInTheDocument();
-    const openBtn = screen.getByRole("button", { name: "Open Markdown search and file list" });
+    expect(screen.getByText("42")).toBeInTheDocument();
+    const openBtn = screen.getByRole("button", { name: "Open Dynamic Markdown Dock" });
     await act(async () => {
       fireEvent.click(openBtn);
     });
