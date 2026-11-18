@@ -131,15 +131,8 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "toggle" => {
-                if let Some(state) = app.try_state::<AppState>()
-                    && let Ok(target) = state.dock.toggle_from_hotkey(app)
-                {
-                    let active = state.hotkey.active().unwrap_or_default();
-                    let _ = HotkeyTriggeredEvent {
-                        shortcut: active,
-                        target_mode: target,
-                    }
-                    .emit(app);
+                if let Some(state) = app.try_state::<AppState>() {
+                    state.hotkey.trigger(app);
                 }
             }
             "settings" => {
@@ -195,15 +188,8 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
             } = event
             {
                 let app = tray.app_handle();
-                if let Some(state) = app.try_state::<AppState>()
-                    && let Ok(target) = state.dock.toggle_from_hotkey(app)
-                {
-                    let active = state.hotkey.active().unwrap_or_default();
-                    let _ = HotkeyTriggeredEvent {
-                        shortcut: active,
-                        target_mode: target,
-                    }
-                    .emit(app);
+                if let Some(state) = app.try_state::<AppState>() {
+                    state.hotkey.trigger(app);
                 }
             }
         });
@@ -231,13 +217,28 @@ pub fn run() {
                 .level(tauri_plugin_log::log::LevelFilter::Info)
                 .build(),
         )
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(state) = app.try_state::<AppState>()
-                && let Ok(plan) = state.dock.plan_transition(app, DockMode::Expanded)
-            {
-                let _ = state.dock.apply_plan(app, plan.seq, true);
-                let _ = DockFocusRequestEvent { focus_search: true }.emit(app);
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if args.iter().any(|a| a == "--toggle") {
+                if let Some(state) = app.try_state::<AppState>() {
+                    state.hotkey.trigger(app);
+                }
+                return;
             }
+            let handle = app.clone();
+            let _ = app.run_on_main_thread(move || {
+                if let Some(state) = handle.try_state::<AppState>()
+                    && let Ok(plan) = state.dock.plan_transition(&handle, DockMode::Expanded)
+                {
+                    let _ = state.dock.apply_plan(&handle, plan.seq, true);
+                    let shortcut = state.hotkey.active().unwrap_or_default();
+                    let _ = HotkeyTriggeredEvent {
+                        shortcut,
+                        target_mode: DockMode::Expanded,
+                    }
+                    .emit(&handle);
+                    let _ = DockFocusRequestEvent { focus_search: true }.emit(&handle);
+                }
+            });
         }))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())

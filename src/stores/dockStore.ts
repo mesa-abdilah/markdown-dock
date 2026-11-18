@@ -17,6 +17,7 @@ export interface DockStoreState {
   pinned: boolean;
   seq: number;
   lastTypingAt: number;
+  lastExpandAt: number;
   focusSearchSeq: number;
   settingsOpen: boolean;
   visualLogical: LogicalSizeF;
@@ -68,6 +69,7 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
   pinned: false,
   seq: 0,
   lastTypingAt: 0,
+  lastExpandAt: 0,
   focusSearchSeq: 0,
   settingsOpen: false,
   visualLogical: { width: 12, height: 80 },
@@ -99,6 +101,7 @@ export const useDockStore = create<DockStoreState>((set, get) => ({
   },
 
   async expandTo(target, opts) {
+    set({ lastExpandAt: Date.now() });
     const current = get().state;
     const focusWindow =
       opts?.focusWindow ??

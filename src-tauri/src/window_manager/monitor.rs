@@ -30,12 +30,24 @@ fn monitor_name(m: &Monitor, idx: usize) -> String {
 
 fn to_work_area(m: &Monitor) -> MonitorWorkArea {
     let wa = m.work_area();
-    MonitorWorkArea {
-        x: wa.position.x,
-        y: wa.position.y,
-        width: wa.size.width,
-        height: wa.size.height,
-        scale_factor: m.scale_factor(),
+    if wa.size.width > 0 && wa.size.height > 0 {
+        MonitorWorkArea {
+            x: wa.position.x,
+            y: wa.position.y,
+            width: wa.size.width,
+            height: wa.size.height,
+            scale_factor: m.scale_factor(),
+        }
+    } else {
+        let pos = m.position();
+        let size = m.size();
+        MonitorWorkArea {
+            x: pos.x,
+            y: pos.y,
+            width: size.width,
+            height: size.height,
+            scale_factor: m.scale_factor(),
+        }
     }
 }
 

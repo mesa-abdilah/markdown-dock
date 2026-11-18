@@ -92,8 +92,15 @@ export function useAutoCollapse() {
 
   useEffect(() => {
     const onWindowBlur = () => {
-      const { state, pinned, collapse } = useDockStore.getState();
-      if (pinned || state === "Fullscreen" || useSearchStore.getState().dirty) return;
+      const { state, pinned, lastExpandAt, collapse } = useDockStore.getState();
+      if (
+        pinned ||
+        state === "Fullscreen" ||
+        useSearchStore.getState().dirty ||
+        Date.now() - lastExpandAt < 450
+      ) {
+        return;
+      }
       if (state === "Expanded" || state === "Wide") {
         clearTimers();
         void collapse();
