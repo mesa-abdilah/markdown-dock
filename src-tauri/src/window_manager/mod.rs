@@ -75,6 +75,7 @@ impl DockController {
 
         let plan = self.plan_transition(app, DockMode::Collapsed)?;
         let snapshot = self.apply_plan(app, plan.seq, false)?;
+        platform::show_dock_window(&win)?;
         Ok(snapshot)
     }
 
@@ -156,7 +157,7 @@ impl DockController {
         platform::set_bounds_atomic(&win, plan.rect_phys)?;
 
         if focus_window && !no_activate {
-            let _ = win.set_focus();
+            platform::focus_dock_window(&win);
         }
         self.schedule_webview_memory_policy(app, &win, plan.target_mode);
 
@@ -267,7 +268,7 @@ impl DockController {
                 if pinned {
                     // When pinned, hotkey brings focus back rather than hiding unexpectedly.
                     let win = Self::dock_window(app)?;
-                    let _ = win.set_focus();
+                    platform::focus_dock_window(&win);
                     let _ = DockFocusRequestEvent { focus_search: true }.emit(app);
                     return Ok(current_mode);
                 }

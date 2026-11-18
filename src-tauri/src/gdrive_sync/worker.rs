@@ -25,8 +25,8 @@ use crate::gdrive_sync::manifest::{
 };
 use crate::gdrive_sync::oauth::OAuthManager;
 use crate::gdrive_sync::restore::{
-    PullReport, RestoreReport, RestoreSelection, fetch_all_manifests, list_restore_catalog,
-    pull_remote_to_local_roots, restore_to_directory,
+    PullContext, PullReport, RestoreReport, RestoreSelection, fetch_all_manifests,
+    list_restore_catalog, pull_remote_to_local_roots, restore_to_directory,
 };
 use crate::indexer::db::{BackupLocalDoc, IndexDb, SyncStateRow};
 
@@ -584,15 +584,26 @@ impl SyncManager {
         let layout = self.ensure_drive_layout(&token).await?;
         let own_device_id = self.db.ensure_device_id()?;
 
-        let res = pull_remote_to_local_roots(
-            &self.db,
-            &self.client,
-            &token,
-            &layout.vault_folder_id,
-            &keys,
-            &vault_id,
-            &own_device_id,
-        )
+        let library_dir = app
+            .and_then(|h| crate::commands::roots::managed_library_dir(h).ok())
+            .or_else(|| {
+                self.db.list_roots().ok().and_then(|rs| {
+                    rs.into_iter()
+                        .filter_map(|r| PathBuf::from(r.path).parent().map(|p| p.to_path_buf()))
+                        .next()
+                })
+            });
+
+        let res = pull_remote_to_local_roots(PullContext {
+            db: &self.db,
+            client: &self.client,
+            token: &token,
+            vault_folder_id: &layout.vault_folder_id,
+            keys: &keys,
+            vault_id: &vault_id,
+            own_device_id: &own_device_id,
+            library_dir: library_dir.as_deref(),
+        })
         .await;
 
         match res {

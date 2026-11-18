@@ -62,7 +62,8 @@ pub async fn sync_now(
 #[specta::specta]
 pub async fn sync_pull(app: AppHandle, state: State<'_, AppState>) -> Result<PullReport, AppError> {
     let report = state.sync.pull_remote_changes(Some(&app)).await?;
-    // Rescan enabled roots so newly pulled files become searchable immediately.
+    // Watch any newly created managed folders and rescan enabled roots so pulled files appear immediately.
+    let _ = state.watcher.watch_missing_enabled_roots();
     for root in state.db.list_roots()? {
         if root.enabled {
             let _ = state.watcher.rescan_root(i64::from(root.id));

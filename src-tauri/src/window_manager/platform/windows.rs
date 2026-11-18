@@ -4,8 +4,9 @@ use tauri::{AppHandle, Manager, WebviewWindow};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
     CallWindowProcW, GWL_EXSTYLE, GWLP_WNDPROC, GetCursorPos, GetWindowLongPtrW, HWND_TOPMOST,
-    SPI_SETWORKAREA, SWP_NOACTIVATE, SWP_NOZORDER, SetWindowLongPtrW, SetWindowPos,
-    WM_DISPLAYCHANGE, WM_SETTINGCHANGE, WNDPROC, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    SPI_SETWORKAREA, SW_SHOWNOACTIVATE, SWP_NOACTIVATE, SWP_NOZORDER, SetWindowLongPtrW,
+    SetWindowPos, ShowWindow, WM_DISPLAYCHANGE, WM_SETTINGCHANGE, WNDPROC, WS_EX_NOACTIVATE,
+    WS_EX_TOOLWINDOW,
 };
 use windows::core::Interface;
 
@@ -127,6 +128,18 @@ unsafe extern "system" fn dock_wndproc(
         return unsafe { CallWindowProcW(proc_fn, hwnd, msg, wparam, lparam) };
     }
     LRESULT(0)
+}
+
+pub fn show_dock_window(window: &WebviewWindow) -> Result<(), AppError> {
+    let hwnd = window.hwnd()?;
+    unsafe {
+        let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+    }
+    Ok(())
+}
+
+pub fn focus_dock_window(window: &WebviewWindow) {
+    let _ = window.set_focus();
 }
 
 pub fn set_webview_low_memory(window: &WebviewWindow, low: bool) {

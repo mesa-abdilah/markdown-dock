@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 use rusqlite_migration::{M, Migrations};
 use serde::Serialize;
 use specta::Type;
@@ -1088,6 +1088,10 @@ fn handle_upsert_batch(
                         sha256 = excluded.sha256,
                         word_count = excluded.word_count,
                         indexed_at = excluded.indexed_at
+                     WHERE documents.size != excluded.size
+                        OR documents.mtime_ns != excluded.mtime_ns
+                        OR documents.sha256 != excluded.sha256
+                        OR documents.file_name != excluded.file_name
                      RETURNING id",
                 )
                 .map_err(db_err)?;
@@ -1108,7 +1112,7 @@ fn handle_upsert_batch(
                 .map_err(db_err)?;
 
             for doc in chunk {
-                let doc_id: i64 = upsert_doc
+                let Some(doc_id): Option<i64> = upsert_doc
                     .query_row(
                         params![
                             root_id,
@@ -1126,7 +1130,11 @@ fn handle_upsert_batch(
                         ],
                         |r| r.get(0),
                     )
-                    .map_err(db_err)?;
+                    .optional()
+                    .map_err(db_err)?
+                else {
+                    continue;
+                };
 
                 clear_tags.execute([doc_id]).map_err(db_err)?;
                 for tag in &doc.parsed.tags {

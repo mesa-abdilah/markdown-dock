@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use notify::event::{AccessKind, AccessMode, MetadataKind, ModifyKind};
 use notify::{EventKind, RecommendedWatcher, RecursiveMode};
 use notify_debouncer_full::{
     DebounceEventResult, DebouncedEvent, Debouncer, RecommendedCache, new_debouncer,
@@ -147,6 +148,24 @@ impl WatcherManager {
         let root = self.db.get_root(root_id)?;
         scanner::scan_root(&self.db, &root, Some(&self.app))
     }
+
+    /// Registers file watchers for any enabled roots added outside `WatcherManager` (e.g. during sync pull).
+    pub fn watch_missing_enabled_roots(&self) -> Result<(), AppError> {
+        let roots = self.db.list_roots()?;
+        for root in roots {
+            if !root.enabled {
+                continue;
+            }
+            let already_watched = {
+                let map = self.watched.lock().unwrap();
+                map.contains_key(&i64::from(root.id))
+            };
+            if !already_watched && let Err(err) = self.watch_and_scan_root(root.clone()) {
+                tracing::warn!("Failed to watch pulled root '{}': {err}", root.path);
+            }
+        }
+        Ok(())
+    }
 }
 
 fn process_debounced_events(
@@ -171,11 +190,12 @@ fn process_debounced_events(
     };
 
     let mut need_rescan_roots: Vec<RootInfo> = Vec::new();
+    let mut seen_upsert_paths: HashMap<i64, std::collections::HashSet<PathBuf>> = HashMap::new();
     let mut upserts: HashMap<i64, Vec<crate::indexer::db::IndexableDoc>> = HashMap::new();
     let mut deletes: HashMap<i64, Vec<String>> = HashMap::new();
 
     for ev in events {
-        if matches!(ev.kind, EventKind::Other) {
+        if should_ignore_event_kind(ev.kind) {
             continue;
         }
 
@@ -203,6 +223,10 @@ fn process_debounced_events(
                         // A folder was created/renamed/moved in: reconcile this root.
                         need_rescan_roots.push(info.clone());
                     } else if is_markdown_file(&norm_path)
+                        && seen_upsert_paths
+                            .entry(*root_id)
+                            .or_default()
+                            .insert(norm_path.clone())
                         && let Some(doc) = scanner::build_indexable_doc(canon_root, &norm_path)
                     {
                         upserts.entry(*root_id).or_default().push(doc);
@@ -254,6 +278,17 @@ fn process_debounced_events(
     }
 }
 
+/// Filters out read/open/access-time events that would re-trigger indexing when the watcher or
+/// scanner reads a file (notably Linux `inotify` `WatchMask::OPEN`).
+fn should_ignore_event_kind(kind: EventKind) -> bool {
+    match kind {
+        EventKind::Other => true,
+        EventKind::Access(access) => !matches!(access, AccessKind::Close(AccessMode::Write)),
+        EventKind::Modify(ModifyKind::Metadata(MetadataKind::AccessTime)) => true,
+        _ => false,
+    }
+}
+
 fn soft_canonicalize(path: &PathBuf) -> PathBuf {
     if let Ok(c) = std::fs::canonicalize(path) {
         return c;
@@ -264,4 +299,50 @@ fn soft_canonicalize(path: &PathBuf) -> PathBuf {
         return cp.join(name);
     }
     path.clone()
+}
+
+#[cfg(test)]
+mod tests {
+    use notify::event::{CreateKind, DataChange, RemoveKind, RenameMode};
+
+    use super::*;
+
+    #[test]
+    fn ignores_non_mutating_access_and_atime_events() {
+        assert!(should_ignore_event_kind(EventKind::Other));
+        assert!(should_ignore_event_kind(EventKind::Access(
+            AccessKind::Open(AccessMode::Any)
+        )));
+        assert!(should_ignore_event_kind(EventKind::Access(
+            AccessKind::Open(AccessMode::Read)
+        )));
+        assert!(should_ignore_event_kind(EventKind::Access(
+            AccessKind::Read
+        )));
+        assert!(should_ignore_event_kind(EventKind::Access(
+            AccessKind::Close(AccessMode::Read)
+        )));
+        assert!(should_ignore_event_kind(EventKind::Modify(
+            ModifyKind::Metadata(MetadataKind::AccessTime)
+        )));
+    }
+
+    #[test]
+    fn allows_mutating_events() {
+        assert!(!should_ignore_event_kind(EventKind::Access(
+            AccessKind::Close(AccessMode::Write)
+        )));
+        assert!(!should_ignore_event_kind(EventKind::Create(
+            CreateKind::File
+        )));
+        assert!(!should_ignore_event_kind(EventKind::Modify(
+            ModifyKind::Data(DataChange::Any)
+        )));
+        assert!(!should_ignore_event_kind(EventKind::Modify(
+            ModifyKind::Name(RenameMode::To)
+        )));
+        assert!(!should_ignore_event_kind(EventKind::Remove(
+            RemoveKind::File
+        )));
+    }
 }

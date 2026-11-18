@@ -59,13 +59,13 @@ fn folder_slug(name: &str) -> String {
     }
 }
 
-pub fn create_managed_folder_internal(
-    app: &AppHandle,
-    state: &AppState,
+pub fn create_managed_root_in_dir(
+    db: &crate::indexer::db::IndexDb,
+    lib_dir: &Path,
     raw_name: &str,
 ) -> Result<RootInfo, AppError> {
     let label = validate_folder_name(raw_name)?;
-    let existing = state.db.list_roots()?;
+    let existing = db.list_roots()?;
     if existing
         .iter()
         .any(|r| r.label.eq_ignore_ascii_case(&label))
@@ -75,7 +75,7 @@ pub fn create_managed_folder_internal(
         )));
     }
 
-    let lib_dir = managed_library_dir(app)?;
+    std::fs::create_dir_all(lib_dir)?;
     let base_slug = folder_slug(&label);
     let mut folder_dir = lib_dir.join(&base_slug);
     if folder_dir.exists() {
@@ -86,9 +86,19 @@ pub fn create_managed_folder_internal(
     let canon = std::fs::canonicalize(&folder_dir).unwrap_or(folder_dir);
     let canon_str = canon.to_string_lossy().into_owned();
 
-    let mut root = state.db.add_root(canon_str, label, Vec::new())?;
-    state.db.set_root_backup(i64::from(root.id), true)?;
+    let mut root = db.add_root(canon_str, label, Vec::new())?;
+    db.set_root_backup(i64::from(root.id), true)?;
     root.backup = true;
+    Ok(root)
+}
+
+pub fn create_managed_folder_internal(
+    app: &AppHandle,
+    state: &AppState,
+    raw_name: &str,
+) -> Result<RootInfo, AppError> {
+    let lib_dir = managed_library_dir(app)?;
+    let root = create_managed_root_in_dir(&state.db, &lib_dir, raw_name)?;
     state.watcher.watch_and_scan_root(root.clone())?;
 
     if let Ok(total_docs) = state.db.count_enabled_documents() {

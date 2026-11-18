@@ -1,11 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use specta::Type;
 
+use crate::commands::roots::create_managed_root_in_dir;
 use crate::crypto::aead::decrypt_blob;
 use crate::crypto::keys::VaultKeys;
+use crate::crypto::names::derive_file_id;
 use crate::error::AppError;
 use crate::gdrive_sync::client::DriveClient;
 use crate::gdrive_sync::manifest::{Manifest, RestoreCatalogItem, merge_manifests};
@@ -130,28 +133,51 @@ pub async fn restore_to_directory(
     Ok(report)
 }
 
+pub struct PullContext<'a> {
+    pub db: &'a IndexDb,
+    pub client: &'a DriveClient,
+    pub token: &'a str,
+    pub vault_folder_id: &'a str,
+    pub keys: &'a VaultKeys,
+    pub vault_id: &'a [u8; 16],
+    pub own_device_id: &'a str,
+    pub library_dir: Option<&'a Path>,
+}
+
 /// Explicit Sync / Pull: pulls newer files from remote device manifests into mapped local roots.
+/// Matches remote folders by `root_uuid`, then by folder label (case-insensitive), and creates
+/// missing managed folders inside `library_dir` when pulling from another device.
 /// Divergent conflicts are saved side-by-side (`<stem>.conflict-<device>-<ts>.md`) instead of overwriting.
-pub async fn pull_remote_to_local_roots(
-    db: &IndexDb,
-    client: &DriveClient,
-    token: &str,
-    vault_folder_id: &str,
-    keys: &VaultKeys,
-    vault_id: &[u8; 16],
-    own_device_id: &str,
-) -> Result<PullReport, AppError> {
+pub async fn pull_remote_to_local_roots(ctx: PullContext<'_>) -> Result<PullReport, AppError> {
+    let PullContext {
+        db,
+        client,
+        token,
+        vault_folder_id,
+        keys,
+        vault_id,
+        own_device_id,
+        library_dir,
+    } = ctx;
     let manifests = fetch_all_manifests(client, token, vault_folder_id, keys, vault_id).await?;
     let roots = db.list_roots()?;
-    let root_paths: HashMap<String, PathBuf> = roots
-        .into_iter()
-        .filter(|r| r.enabled)
-        .filter_map(|r| {
-            std::fs::canonicalize(&r.path)
-                .ok()
-                .map(|p| (r.root_uuid, p))
-        })
-        .collect();
+
+    let mut by_uuid: HashMap<String, (String, PathBuf)> = HashMap::new();
+    let mut by_label_lower: HashMap<String, (String, PathBuf)> = HashMap::new();
+    let mut disabled_labels_lower: HashSet<String> = HashSet::new();
+
+    for r in roots {
+        if !r.enabled {
+            disabled_labels_lower.insert(r.label.to_ascii_lowercase());
+            continue;
+        }
+        if let Ok(canon) = std::fs::canonicalize(&r.path) {
+            by_uuid.insert(r.root_uuid.clone(), (r.root_uuid.clone(), canon.clone()));
+            by_label_lower
+                .entry(r.label.to_ascii_lowercase())
+                .or_insert((r.root_uuid, canon));
+        }
+    }
 
     let sync_map: HashMap<String, SyncStateRow> = db
         .list_sync_states()?
@@ -161,16 +187,22 @@ pub async fn pull_remote_to_local_roots(
     let local_docs = db.list_backup_docs()?;
     let mut local_shas: HashMap<String, [u8; 32]> = HashMap::new();
     for d in local_docs {
-        let fid = crate::crypto::names::derive_file_id(&keys.k_name, &d.root_uuid, &d.rel_path);
+        let fid = derive_file_id(&keys.k_name, &d.root_uuid, &d.rel_path);
         local_shas.insert(hex::encode(fid), d.sha256);
     }
 
-    // Pick newest remote entry per file_id across other devices
+    // Pick newest remote entry per file_id across other devices and record remote root labels.
+    let mut remote_root_labels: HashMap<String, String> = HashMap::new();
     let mut remote_best: HashMap<String, (crate::gdrive_sync::manifest::ManifestEntry, String)> =
         HashMap::new();
     for m in manifests {
         if m.device_id == own_device_id {
             continue;
+        }
+        for r in m.roots {
+            remote_root_labels
+                .entry(r.root_uuid)
+                .or_insert(r.label);
         }
         for (fid, entry) in m.entries {
             match remote_best.get(&fid) {
@@ -188,30 +220,79 @@ pub async fn pull_remote_to_local_roots(
         skipped: 0,
     };
 
-    for (file_id_hex, (entry, remote_device)) in remote_best {
+    for (remote_file_id_hex, (entry, remote_device)) in remote_best {
         if entry.deleted_at.is_some() {
             report.skipped += 1;
             continue;
         }
-        let Some(root_canon) = root_paths.get(&entry.root_uuid) else {
-            report.skipped += 1;
-            continue;
+
+        let target_root = if let Some(found) = by_uuid.get(&entry.root_uuid) {
+            found.clone()
+        } else {
+            let remote_label = remote_root_labels
+                .get(&entry.root_uuid)
+                .map(String::as_str)
+                .unwrap_or("General");
+            let label_key = remote_label.to_ascii_lowercase();
+
+            if disabled_labels_lower.contains(&label_key) {
+                report.skipped += 1;
+                continue;
+            }
+
+            if let Some(found_by_label) = by_label_lower.get(&label_key) {
+                let cloned = found_by_label.clone();
+                by_uuid.insert(entry.root_uuid.clone(), cloned.clone());
+                cloned
+            } else if let Some(lib_dir) = library_dir {
+                match create_managed_root_in_dir(db, lib_dir, remote_label) {
+                    Ok(created) => {
+                        let canon = std::fs::canonicalize(&created.path)
+                            .unwrap_or_else(|_| PathBuf::from(&created.path));
+                        let pair = (created.root_uuid.clone(), canon);
+                        by_uuid.insert(entry.root_uuid.clone(), pair.clone());
+                        by_uuid.insert(created.root_uuid, pair.clone());
+                        by_label_lower.insert(label_key, pair.clone());
+                        pair
+                    }
+                    Err(err) => {
+                        tracing::warn!(
+                            "Could not create local folder '{}' during pull: {err}",
+                            remote_label
+                        );
+                        report.skipped += 1;
+                        continue;
+                    }
+                }
+            } else {
+                report.skipped += 1;
+                continue;
+            }
         };
-        let Some(dest) = safe_join_rel(root_canon, &entry.rel_path) else {
+
+        let (local_root_uuid, root_canon) = target_root;
+        let Some(dest) = safe_join_rel(&root_canon, &entry.rel_path) else {
             report.skipped += 1;
             continue;
         };
 
-        let local_sha = local_shas.get(&file_id_hex).copied();
+        let local_fid_bytes = derive_file_id(&keys.k_name, &local_root_uuid, &entry.rel_path);
+        let local_fid_hex = hex::encode(local_fid_bytes);
+
+        let local_sha = local_shas
+            .get(&local_fid_hex)
+            .copied()
+            .or_else(|| sha256_if_exists(&dest));
         if local_sha == Some(entry.sha256) {
             report.skipped += 1;
             continue;
         }
 
         let base_sha = sync_map
-            .get(&file_id_hex)
+            .get(&local_fid_hex)
+            .or_else(|| sync_map.get(&remote_file_id_hex))
             .and_then(|s| s.last_synced_sha256);
-        let fid_bytes = hex_to_32(&file_id_hex)?;
+        let remote_fid_bytes = hex_to_32(&remote_file_id_hex)?;
 
         // Fast-forward if file doesn't exist locally or local matches last synced base.
         let can_fast_forward = local_sha.is_none() || local_sha == base_sha;
@@ -220,7 +301,7 @@ pub async fn pull_remote_to_local_roots(
             token,
             keys,
             &entry.blob_drive_id,
-            &fid_bytes,
+            &remote_fid_bytes,
             &entry.sha256,
         )
         .await?;
@@ -232,8 +313,8 @@ pub async fn pull_remote_to_local_roots(
                 .map(|d| d.as_secs() as i64)
                 .unwrap_or(0);
             db.upsert_sync_state(SyncStateRow {
-                file_id: file_id_hex,
-                root_uuid: entry.root_uuid,
+                file_id: local_fid_hex,
+                root_uuid: local_root_uuid,
                 rel_path: entry.rel_path,
                 local_sha256: Some(entry.sha256),
                 last_synced_sha256: Some(entry.sha256),
@@ -256,6 +337,14 @@ pub async fn pull_remote_to_local_roots(
     }
 
     Ok(report)
+}
+
+fn sha256_if_exists(path: &Path) -> Option<[u8; 32]> {
+    let bytes = std::fs::read(path).ok()?;
+    let digest = Sha256::digest(&bytes);
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&digest);
+    Some(out)
 }
 
 async fn download_and_decrypt(

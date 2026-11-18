@@ -52,4 +52,13 @@ pub fn install_display_change_hook(
     Ok(())
 }
 
+pub fn show_dock_window(window: &WebviewWindow) -> Result<(), AppError> {
+    let _ = window.show();
+    Ok(())
+}
+
+pub fn focus_dock_window(window: &WebviewWindow) {
+    let _ = window.set_focus();
+}
+
 pub fn set_webview_low_memory(_window: &WebviewWindow, _low: bool) {}

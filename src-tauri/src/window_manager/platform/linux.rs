@@ -140,6 +140,41 @@ pub fn configure_dock_window(window: &WebviewWindow) -> Result<(), AppError> {
     })
 }
 
+/// Reveals the dock window only after window type hints, flags, and edge bounds are set,
+/// preventing GNOME Mutter from attaching `mutter-x11-frames` at startup.
+pub fn show_dock_window(window: &WebviewWindow) -> Result<(), AppError> {
+    with_gtk_window(window, |gtk_win| {
+        let (rect_opt, no_activate) = DOCK_TARGET
+            .lock()
+            .map(|t| (t.rect, t.no_activate))
+            .unwrap_or((None, true));
+        apply_gtk_window_flags(gtk_win, no_activate);
+        if let Some(rect) = rect_opt {
+            apply_gtk_bounds(gtk_win, rect);
+        }
+        gtk_win.show_all();
+        apply_gtk_window_flags(gtk_win, no_activate);
+        if let Some(rect) = rect_opt {
+            apply_gtk_bounds(gtk_win, rect);
+        }
+    })
+}
+
+/// Focuses and raises the expanded dock window after bounds have been applied.
+pub fn focus_dock_window(window: &WebviewWindow) {
+    let _ = window.set_focus();
+    let _ = with_gtk_window(window, |gtk_win| {
+        gtk_win.set_accept_focus(true);
+        gtk_win.set_focus_on_map(true);
+        if let Some(gdk_win) = gtk_win.window() {
+            gdk_win.set_accept_focus(true);
+            gdk_win.raise();
+            gdk_win.focus(gtk::gdk::ffi::GDK_CURRENT_TIME as u32);
+        }
+        gtk_win.present_with_time(gtk::gdk::ffi::GDK_CURRENT_TIME as u32);
+    });
+}
+
 /// Toggles X11 focusability so Peek/Collapsed do not steal focus from the user's app.
 pub fn set_no_activate(window: &WebviewWindow, no_activate: bool) -> Result<(), AppError> {
     if let Ok(mut guard) = DOCK_TARGET.lock() {
@@ -153,13 +188,6 @@ pub fn set_no_activate(window: &WebviewWindow, no_activate: bool) -> Result<(), 
         if let Some(gdk_win) = gtk_win.window() {
             gdk_win.set_accept_focus(!no_activate);
             gdk_win.set_focus_on_map(!no_activate);
-            if !no_activate {
-                gdk_win.raise();
-                gdk_win.focus(gtk::gdk::ffi::GDK_CURRENT_TIME as u32);
-            }
-        }
-        if !no_activate {
-            gtk_win.present();
         }
     })
 }
@@ -209,16 +237,28 @@ pub fn install_display_change_hook(
             gtk::glib::Propagation::Proceed
         });
 
+        // tao schedules a one-shot draw callback that resets `accept_focus` to `true` when
+        // `focus: false` is configured; restore our target `no_activate` state after draw.
+        gtk_win.connect_draw(|win, _| {
+            if let Ok(guard) = DOCK_TARGET.lock()
+                && win.accepts_focus() != !guard.no_activate
+            {
+                let no_activate = guard.no_activate;
+                win.set_accept_focus(!no_activate);
+                if let Some(gdk_win) = win.window() {
+                    gdk_win.set_accept_focus(!no_activate);
+                }
+            }
+            gtk::glib::Propagation::Proceed
+        });
+
         // If Mutter or tao's internal configure callback resets position (e.g. centering on map)
         // or size constraints, snap the window back to the active dock plan.
         gtk_win.connect_configure_event(|win, event| {
             let should_snap = if let Ok(mut guard) = DOCK_TARGET.lock() {
                 if let Some(rect) = guard.rect {
                     let (target_x, target_y, target_w, target_h) = logical_bounds(win, rect);
-                    let (cur_x, cur_y) = win
-                        .window()
-                        .map(|w| w.root_origin())
-                        .unwrap_or_else(|| event.position());
+                    let (cur_x, cur_y) = event.position();
                     let (cur_w, cur_h) = event.size();
                     let pos_mismatch =
                         (cur_x - target_x).abs() > 2 || (cur_y - target_y).abs() > 2;

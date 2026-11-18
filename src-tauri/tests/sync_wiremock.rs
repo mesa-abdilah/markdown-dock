@@ -341,3 +341,146 @@ async fn zero_knowledge_delta_backup_and_restore_over_wiremock() {
 
     db.shutdown();
 }
+
+#[tokio::test]
+async fn cross_device_pull_maps_by_label_and_creates_missing_folders() {
+    let server = MockServer::start().await;
+    let fake_state = Arc::new(Mutex::new(FakeDriveState::default()));
+
+    Mock::given(method("GET"))
+        .and(path_regex(".*"))
+        .respond_with(FakeDriveResponder {
+            state: Arc::clone(&fake_state),
+        })
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path_regex(".*"))
+        .respond_with(FakeDriveResponder {
+            state: Arc::clone(&fake_state),
+        })
+        .mount(&server)
+        .await;
+    Mock::given(method("PATCH"))
+        .and(path_regex(".*"))
+        .respond_with(FakeDriveResponder {
+            state: Arc::clone(&fake_state),
+        })
+        .mount(&server)
+        .await;
+
+    let base_url = format!("{}/drive/v3", server.uri());
+    let upload_url = format!("{}/upload/drive/v3", server.uri());
+
+    // --- Device A: sets up vault, creates "General" + "Work", backs up to Drive ---
+    let tmp_a = TempDir::new().unwrap();
+    let lib_a = tmp_a.path().join("library");
+    let gen_a = lib_a.join("General");
+    let work_a = lib_a.join("Work");
+    fs::create_dir_all(&gen_a).unwrap();
+    fs::create_dir_all(&work_a).unwrap();
+    fs::write(gen_a.join("welcome.md"), "# Welcome from Windows").unwrap();
+    fs::write(work_a.join("tasks.md"), "- [ ] Ship Ubuntu sync").unwrap();
+
+    let db_a = IndexDb::open(&tmp_a.path().join("index.db")).unwrap();
+    let root_gen_a = db_a
+        .add_root(
+            fs::canonicalize(&gen_a).unwrap().to_string_lossy().into_owned(),
+            "General".into(),
+            Vec::new(),
+        )
+        .unwrap();
+    let root_work_a = db_a
+        .add_root(
+            fs::canonicalize(&work_a).unwrap().to_string_lossy().into_owned(),
+            "Work".into(),
+            Vec::new(),
+        )
+        .unwrap();
+    db_a.set_root_backup(i64::from(root_gen_a.id), true).unwrap();
+    db_a.set_root_backup(i64::from(root_work_a.id), true).unwrap();
+    scan_root(&db_a, &db_a.get_root(i64::from(root_gen_a.id)).unwrap(), None).unwrap();
+    scan_root(&db_a, &db_a.get_root(i64::from(root_work_a.id)).unwrap(), None).unwrap();
+
+    let vault_a = Arc::new(VaultManager::init(tmp_a.path().join("keyfile.vault")));
+    let pending = vault_a
+        .begin_setup("super-strong-passphrase-2026!", AeadAlg::Aes256Gcm, false)
+        .unwrap();
+    vault_a.confirm_setup(None, &pending.recovery_suffix).unwrap();
+
+    let oauth_a = Arc::new(OAuthManager::default());
+    oauth_a.set_test_token("fake-access-token".into(), Some("fake-refresh".into()));
+    let sync_a = SyncManager::new(
+        db_a.clone(),
+        Arc::clone(&vault_a),
+        Arc::clone(&oauth_a),
+        DriveClient::new(base_url.clone(), upload_url.clone()),
+        "cid".into(),
+        "csec".into(),
+        30,
+    );
+    let up_report = sync_a.run_delta_backup(None).await.unwrap();
+    assert_eq!(up_report.uploaded, 2);
+
+    // --- Device B: fresh device with its OWN "General" root_uuid, imports remote keyfile ---
+    let tmp_b = TempDir::new().unwrap();
+    let lib_b = tmp_b.path().join("library");
+    let gen_b = lib_b.join("General");
+    fs::create_dir_all(&gen_b).unwrap();
+
+    let db_b = IndexDb::open(&tmp_b.path().join("index.db")).unwrap();
+    let root_gen_b = db_b
+        .add_root(
+            fs::canonicalize(&gen_b).unwrap().to_string_lossy().into_owned(),
+            "General".into(),
+            Vec::new(),
+        )
+        .unwrap();
+    db_b.set_root_backup(i64::from(root_gen_b.id), true).unwrap();
+    assert_ne!(root_gen_a.root_uuid, root_gen_b.root_uuid);
+
+    let vault_b = Arc::new(VaultManager::init(tmp_b.path().join("keyfile.vault")));
+    let oauth_b = Arc::new(OAuthManager::default());
+    oauth_b.set_test_token("fake-access-token".into(), Some("fake-refresh".into()));
+    let sync_b = SyncManager::new(
+        db_b.clone(),
+        Arc::clone(&vault_b),
+        Arc::clone(&oauth_b),
+        DriveClient::new(base_url, upload_url),
+        "cid".into(),
+        "csec".into(),
+        30,
+    );
+    sync_b.import_remote_keyfile().await.unwrap();
+    vault_b
+        .unlock_with_password(None, "super-strong-passphrase-2026!", false)
+        .unwrap();
+
+    let pull1 = sync_b.pull_remote_changes(None).await.unwrap();
+    assert_eq!(pull1.pulled, 2);
+    assert_eq!(pull1.conflict_copies, 0);
+
+    assert_eq!(
+        fs::read_to_string(gen_b.join("welcome.md")).unwrap(),
+        "# Welcome from Windows"
+    );
+    assert_eq!(
+        fs::read_to_string(lib_b.join("Work").join("tasks.md")).unwrap(),
+        "- [ ] Ship Ubuntu sync"
+    );
+
+    // Rescan Device B and verify idempotency on second pull & delta backup
+    for r in db_b.list_roots().unwrap() {
+        scan_root(&db_b, &r, None).unwrap();
+    }
+    let pull2 = sync_b.pull_remote_changes(None).await.unwrap();
+    assert_eq!(pull2.pulled, 0);
+    assert_eq!(pull2.skipped, 2);
+
+    let backup_b = sync_b.run_delta_backup(None).await.unwrap();
+    assert_eq!(backup_b.uploaded, 0);
+    assert_eq!(backup_b.skipped, 2);
+
+    db_a.shutdown();
+    db_b.shutdown();
+}
